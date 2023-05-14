@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.urls import path
 
 from post import views
-from post.views import Tags, like, favourite
+from post.views import Tags, like, favourite, UserProfile, EditProfile
+
 urlpatterns = [
     path('', views.index, name='home'),
     path('login/', views.LoginPageView.as_view(), name='login'),
@@ -15,6 +16,8 @@ urlpatterns = [
     path('tag/<slug:tag_slug>', Tags, name='tags'),
     path('<uuid:post_id>/like', like, name='like'),
     path('<uuid:post_id>/favourite', favourite, name='favourite'),
-    
-    # path('profile/', views.profile, name='profile'),
+    path('<username>/', UserProfile, name='profile'),
+    path('<username>/saved/', UserProfile, name='profilefavourite'),
+    path('profile/edit', EditProfile, name="editprofile"),
+    path('<username>/follow/<option>/', views.follow, name='follow'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.forms import TextInput, PasswordInput
 
-from post.models import Comment, Post
+from post.models import Comment, Post, Profile
 
 
 class CreateUserForm(UserCreationForm):
@@ -65,3 +65,17 @@ class NewPostform(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['picture', 'caption', 'tags']
+
+
+class EditProfileForm(forms.ModelForm):
+    image = forms.ImageField(required=True)
+    first_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'First Name'}), required=True)
+    last_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'Last Name'}), required=True)
+    bio = forms.CharField(widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'Bio'}), required=True)
+    url = forms.CharField(widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'URL'}), required=True)
+    location = forms.CharField(widget=forms.TextInput(attrs={'class': 'input', 'placeholder': 'Address'}), required=True)
+
+    class Meta:
+        model = Profile
+        fields = ['image', 'first_name', 'last_name', 'bio', 'url', 'location']
+

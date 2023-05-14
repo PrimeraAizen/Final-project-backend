@@ -5,14 +5,15 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django.views import View
 
-from post.forms import LoginForm, CreateUserForm, NewCommentForm, NewPostform
+from post.forms import LoginForm, CreateUserForm, NewCommentForm, NewPostform, EditProfileForm
 from post.models import Follow, Profile, Stream, Post, Likes, Tag, Comment
 
 
@@ -111,7 +112,10 @@ def post_details(request, post_id):
     user = request.user
     post = get_object_or_404(Post, id=post_id)
     comments = Comment.objects.filter(post=post).order_by('-date')
-
+    likes = Likes.objects.filter(post=post)
+    liked_users = []
+    for like in likes:
+        liked_users.append(like.user)
     if request.method == "POST":
         form = NewCommentForm(request.POST)
         if form.is_valid():
@@ -126,7 +130,8 @@ def post_details(request, post_id):
     context = {
         'post': post,
         'form': form,
-        'comments': comments
+        'comments': comments,
+        'liked_users': liked_users,
     }
 
     return render(request, 'post/post-details.html', context)
@@ -141,9 +146,44 @@ def Tags(request, tag_slug):
         'tag': tag
 
     }
-    return render(request, 'tag.html', context)
+    return render(request, 'post/tag.html', context)
 
 
+def UserProfile(request, username):
+    Profile.objects.get_or_create(user=request.user)
+    user = get_object_or_404(User, username=username)
+    profile = Profile.objects.get(user=user)
+    url_name = resolve(request.path).url_name
+    posts = Post.objects.filter(user=user).order_by('-posted')
+
+    if url_name == 'profile':
+        posts = Post.objects.filter(user=user).order_by('-posted')
+    else:
+        posts = profile.favourite.all()
+
+    # Profile Stats
+    posts_count = Post.objects.filter(user=user).count()
+    following_count = Follow.objects.filter(follower=user).count()
+    followers_count = Follow.objects.filter(following=user).count()
+    # count_comment = Comment.objects.filter(post=posts).count()
+    follow_status = Follow.objects.filter(following=user, follower=request.user).exists()
+
+    # pagination
+    paginator = Paginator(posts, 8)
+    page_number = request.GET.get('page')
+    posts_paginator = paginator.get_page(page_number)
+
+    context = {
+        'posts': posts,
+        'profile': profile,
+        'posts_count': posts_count,
+        'following_count': following_count,
+        'followers_count': followers_count,
+        'posts_paginator': posts_paginator,
+        'follow_status': follow_status,
+        # 'count_comment':count_comment,
+    }
+    return render(request, 'post/profile.html', context)
 # Like function
 
 def like(request, post_id):
@@ -176,4 +216,50 @@ def favourite(request, post_id):
     else:
         profile.favourite.add(post)
     return HttpResponseRedirect(reverse('post-details', args=[post_id]))
+
+
+def EditProfile(request):
+    user = request.user.id
+    profile = Profile.objects.get(user__id=user)
+
+    if request.method == "POST":
+        form = EditProfileForm(request.POST, request.FILES, instance=request.user.profile)
+        if form.is_valid():
+            profile.image = form.cleaned_data.get('image')
+            profile.first_name = form.cleaned_data.get('first_name')
+            profile.last_name = form.cleaned_data.get('last_name')
+            profile.location = form.cleaned_data.get('location')
+            profile.url = form.cleaned_data.get('url')
+            profile.bio = form.cleaned_data.get('bio')
+            profile.save()
+            return redirect('profile', profile.user.username)
+    else:
+        form = EditProfileForm(instance=request.user.profile)
+
+    context = {
+        'form':form,
+    }
+    return render(request, 'post/editprofile.html', context)
+
+
+def follow(request, username, option):
+    user = request.user
+    following = get_object_or_404(User, username=username)
+
+    try:
+        f, created = Follow.objects.get_or_create(follower=request.user, following=following)
+
+        if int(option) == 0:
+            f.delete()
+            Stream.objects.filter(following=following, user=request.user).all().delete()
+        else:
+            posts = Post.objects.all().filter(user=following)[:25]
+            with transaction.atomic():
+                for post in posts:
+                    stream = Stream(post=post, user=request.user, date=post.posted, following=following)
+                    stream.save()
+        return HttpResponseRedirect(reverse('profile', args=[username]))
+
+    except User.DoesNotExist:
+        return HttpResponseRedirect(reverse('profile', args=[username]))
 

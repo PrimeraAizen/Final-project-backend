@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     # my apps
     'post',
     'crispy_forms',
+    'crispy_bootstrap4',
+    'direct'
 ]
 
 MIDDLEWARE = [
