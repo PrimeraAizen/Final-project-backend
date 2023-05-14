@@ -1,0 +1,60 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="https://kit.fontawesome.com/fc1e235b2e.js"></script>
+  <link rel="stylesheet" href="{% static 'post/css/style3.css' %}">
+  <title>Instagram | Login </title>
+</head>
+
+<body>
+
+  <div id="wrapper">
+    <div class="container">
+      <div class="phone-app-demo">
+        <img src="{% static 'post/img/mobile-app.png' %}" alt="phone with instagram app" style="width: 400px; height: 520px">
+      </div>
+      <div class="form-data">
+        <form action="" method="POST">{% csrf_token %}
+          <div class="logo">
+            <img src="{% static 'post/img/logo.png' %}" alt="logo">
+          </div>
+          <!-- <input type="text" placeholder="Phone number, username, or email"> -->
+          <!-- <input type="password" placeholder="Password"> -->
+          {{ form.first_name.label }} <br>
+                    {{ form.first_name }} <br>
+                    {{ form.last_name.label }} <br>
+                    {{ form.last_name }} <br>
+                    {{ form.username.label }} <br>
+                    {{ form.username }} <br>
+                    {{ form.password1.label }} <br>
+                    {{ form.password1 }} <br>
+                    {{ form.password2.label }} <br>
+                    {{ form.password2 }} <br>
+                    {{ form.email.label }} <br>
+                    {{ form.email }} <br>
+            {{ form.errors }}
+          <button class="form-btn" type="submit">Register</button>
+          <!-- <a href="index.html" class="form-btn" type="submit">Log in</a> -->
+
+        </form>
+        <div class="get-the-app">
+          <span>Get the app.</span>
+          <div class="badges">
+                        <img src="{% static 'post/img/app-store.png' %}" alt="app-store badge">
+
+            <img src="{% static 'post/img/google-play.png' %}" alt="google-play badge">
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+</body>
+
+</html>
